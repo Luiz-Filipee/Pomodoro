@@ -52,7 +52,7 @@ function alterarContexto(contexto){
 }
 
 focoBt.addEventListener('click', ()=>{
-    tempoDecorridoEmSegundos = 1500;
+    tempoDecorridoEmSegundos = 10;
     alterarContexto('foco');
     focoBt.classList.add('active');
 });
@@ -83,6 +83,11 @@ const contagemRegressiva = () =>{
     if(tempoDecorridoEmSegundos <= 0){
         audioTermina.play();
         //alert('Tempo finalizdo');
+        const focoAtivo = html.getAttribute('data-contexto') == 'foco'; // compara se o atriubuto data-contexto e igula a foco
+        if (focoAtivo) {
+            const evento = new CustomEvent('focoFinalizado'); // cria um evento custumizado passando o nome dele
+            document.dispatchEvent(evento); // dispara esse evento
+        }
         zerar();
         return;
     }

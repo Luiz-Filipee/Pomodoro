@@ -4,11 +4,14 @@ const textArea = document.querySelector('.app__form-textarea');
 const ulTarefas = document.querySelector('.app__section-task-list');
 const cancelarBt = document.querySelector('.app__form-footer__button--cancel');
 const paragrafoDescricaoTarefa = document.querySelector('.app__section-active-task-description');
+const btnRemoverConcluidas = document.querySelector('#btn-remover-concluidas');
+const btnRemoverTodas = document.querySelector('#btn-remover-todas');
 
-const tarefas = JSON.parse(localStorage.getItem('tarefas')) || []; // converte uma string JSON em um objeto javascript
+let tarefas = JSON.parse(localStorage.getItem('tarefas')) || []; // converte uma string JSON em um objeto javascript
 // passa o parseItem da lista da tarefa ou devolve uma string vaziz
 
 let tarefaSelecionada = null;
+let liTarefaSelecionada = null;
 
 function atualizarTarefas(){
     localStorage.setItem('tarefas', JSON.stringify(tarefas)); // guardando a lista de tarefas cadastradas dentro da local storage
@@ -62,21 +65,30 @@ function criarElementoTarefa(tarefa){
     li.append(paragrafo);
     li.append(botao);
 
-    li.onclick = () => {
-        document.querySelectorAll('.app__section-task-list-item-active') // pegando todos os itens que possuem essa classe
-            .forEach(elemento => { // iterando todos os elementos
-                elemento.classList.remove('app__section-task-list-item-active'); // removendo a classe do elemento clicado
-            })
-        if (tarefaSelecionada == tarefa) {
-            paragrafoDescricaoTarefa.textContent = ''
-            tarefaSelecionada = null;
-            return; // early return, basicamente faz com que o restante do codigo nao seja executado
+    if(tarefa.completa){
+        li.classList.add('app__section-task-list-item-complete'); // adiciona a classe complete no li
+        botao.setAttribute('disabled', 'disabled'); // setando disable para o botao presente na liTarefaSelecionada
+    }else{
+        li.onclick = () => {
+            //debugger
+            document.querySelectorAll('.app__section-task-list-item-active') // pegando todos os itens que possuem essa classe
+                .forEach(elemento => { // iterando todos os elementos
+                    elemento.classList.remove('app__section-task-list-item-active'); // removendo a classe do elemento clicado
+                })
+            if (tarefaSelecionada == tarefa) {
+                paragrafoDescricaoTarefa.textContent = ''
+                tarefaSelecionada = null;
+                liTarefaSelecionada = null;
+                return; // early return, basicamente faz com que o restante do codigo nao seja executado
+            }
+            tarefaSelecionada = tarefa;
+            liTarefaSelecionada = li;
+            paragrafoDescricaoTarefa.textContent = tarefa.descricao;
+            li.classList.add('app__section-task-list-item-active'); 
         }
-        tarefaSelecionada = tarefa;
-        paragrafoDescricaoTarefa.textContent = tarefa.descricao;
-        li.classList.add('app__section-task-list-item-active'); 
     }
 
+    
     return li; // criou o elemento e retorna pra gente
 }
 
@@ -103,6 +115,31 @@ tarefas.forEach(tarefa => { // percorrendo todas as tarefas da list
     const elementoTarefa = criarElementoTarefa(tarefa); 
     ulTarefas.append(elementoTarefa);
 });
+
+document.addEventListener('focoFinalizado', ()=>{
+    if(tarefaSelecionada && liTarefaSelecionada){
+        liTarefaSelecionada.classList.remove('app__section-task-list-item-active'); // removendo a classe active da li
+        liTarefaSelecionada.classList.add('app__section-task-list-item-complete'); // adiciona a classe complete no li
+        liTarefaSelecionada.querySelector('button').setAttribute('disabled', 'disabled'); // setando disable para o botao presente na liTarefaSelecionada
+        tarefaSelecionada.completa = true; // mostrando o campo completa como true, quando o tempo e finalizado 
+        atualizarTarefas();
+    }
+});
+
+const removerTarefas = (somenteCompletas) => {  
+    //se for passado true por parametro retorna complete, se passado false retorna todos os itens da li
+   const seletor = somenteCompletas ? '.app__section-task-list-item-complete' : '.app__section-task-list-item';
+   document.querySelectorAll(seletor).forEach(elemento => {
+        elemento.remove(); // removendo apenas os itens completos da lista
+   });
+   tarefas = somenteCompletas ? tarefas.filter(tarefa => !tarefa.completa) : []; // filtrando por todas as tarefas que nao estao completas
+   atualizarTarefas();
+}
+
+// Usamos a funcao anonima para garantir que a funcao seja chamada da maneira que desejamos
+btnRemoverConcluidas.onclick = () => removerTarefas(true); // removendo so as completas, por conta do true
+btnRemoverTodas.onclick = () => removerTarefas(false); // removendo todas as tarefas, por conta do false
+
 
 {/* <li class="app__section-task-list-item">
     <svg>
